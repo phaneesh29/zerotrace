@@ -11,6 +11,7 @@ coverage/
 demo-keys.json
 *.pem
 *.key
+.env
 
 # Output files
 watermarked.txt

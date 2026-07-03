@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZeroTrace</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>ZeroTrace</h1>
+    <p class="subtitle">Keyed Unicode Watermarking Framework for AI Generated Text Provenance</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="encode">Encode</button>
+    <button class="tab-btn" data-tab="decode">Decode</button>
+  </nav>
+
+  <main>
+    <!-- ENCODE TAB -->
+    <section id="encode" class="tab-panel active">
+      <h2>Generate &amp; Watermark</h2>
+      <p class="hint">Enter a prompt. Mistral generates the text, then ZeroTrace embeds an invisible, cryptographically signed watermark into it.</p>
+
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" rows="4" placeholder="Write a short paragraph about..."></textarea>
+
+      <button id="encode-btn">Generate &amp; Watermark</button>
+
+      <div id="encode-status" class="status"></div>
+
+      <div id="encode-results" class="results hidden">
+        <label>Generated text (raw)</label>
+        <textarea id="generated-text" rows="8" readonly></textarea>
+
+        <label>Watermarked text (copy this)</label>
+        <textarea id="watermarked-text" rows="8" readonly></textarea>
+        <button id="copy-watermarked" class="secondary">Copy Watermarked Text</button>
+
+        <label>Payload</label>
+        <pre id="encode-payload" class="payload"></pre>
+      </div>
+    </section>
+
+    <!-- DECODE TAB -->
+    <section id="decode" class="tab-panel">
+      <h2>Detect &amp; Verify</h2>
+      <p class="hint">Paste text that may contain a ZeroTrace watermark. Detection recovers the payload, verifies the signature, and reports tamper evidence.</p>
+
+      <label for="decode-input">Text to check</label>
+      <textarea id="decode-input" rows="10" placeholder="Paste watermarked text here..."></textarea>
+
+      <button id="decode-btn">Detect Watermark</button>
+
+      <div id="decode-status" class="status"></div>
+
+      <div id="decode-results" class="results hidden">
+        <div class="grid">
+          <div class="stat"><span class="label">Detected</span><span id="r-detected" class="value"></span></div>
+          <div class="stat"><span class="label">Signature Valid</span><span id="r-sig" class="value"></span></div>
+          <div class="stat"><span class="label">Confidence</span><span id="r-conf" class="value"></span></div>
+          <div class="stat"><span class="label">Integrity Score</span><span id="r-integrity" class="value"></span></div>
+        </div>
+
+        <div id="ecc-block" class="ecc"></div>
+        <div id="warnings-block" class="warnings"></div>
+
+        <label>Recovered Payload</label>
+        <pre id="decode-payload" class="payload"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

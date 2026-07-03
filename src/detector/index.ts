@@ -3,7 +3,7 @@ import { DetectionResult, ProvenancePayload } from '../types';
 import { hashDocument } from '../crypto/hash';
 import { verifyPayload } from '../crypto/signature';
 import { deserializePayload, bitsToPayload } from '../payload/bitstream';
-import { RepetitionCode } from '../ecc';
+import { ConcatenatedCode } from '../ecc';
 import { CHANNEL_A, CHANNEL_B, unicodeToBit } from '../unicode';
 import { getPlacementPositions } from '../watermark/placement';
 import { canonicalize } from '../utils/canonicalize';
@@ -51,9 +51,29 @@ export function detectWatermark(
         return { detected, confidence: 0, signatureValid, payloadRecovered, integrityScore: 0, warnings };
     }
 
-    // ECC Decoding
-    const ecc = new RepetitionCode(3);
-    const decodedBits = ecc.decode(rawBits);
+    // ECC Decoding: BCH inner + Reed-Solomon outer, with repair telemetry.
+    const ecc = new ConcatenatedCode();
+    const report = ecc.decodeWithReport(rawBits);
+    const decodedBits = report.bits;
+    const eccStats = {
+        bchBitsCorrected: report.bchBitsCorrected,
+        rsBytesCorrected: report.rsBytesCorrected,
+        uncorrectableBlocks: report.uncorrectableBlocks,
+        totalCorrections: report.totalCorrections,
+    };
+
+    if (report.totalCorrections > 0) {
+        warnings.push(
+            `ECC repaired ${report.totalCorrections} symbol(s) ` +
+            `(BCH ${report.bchBitsCorrected} bit(s), RS ${report.rsBytesCorrected} byte(s)) ` +
+            `- payload was partially corrupted.`
+        );
+    }
+    if (report.uncorrectableBlocks > 0) {
+        warnings.push(
+            `${report.uncorrectableBlocks} ECC block(s) were beyond repair - heavy tampering.`
+        );
+    }
 
     // Bitstream to JSON
     let wrapperJson = '';
@@ -81,7 +101,16 @@ export function detectWatermark(
         detected = rawBits.length > 50; // Partial detection
     }
 
-    const integrityScore = payloadRecovered && recoveredPayload?.documentHash === currentHash ? 1.0 : (payloadRecovered ? 0.5 : 0.0);
+    // Base integrity from payload/hash, then penalized by how much repair the
+    // ECC had to do. A pristine watermark needs zero corrections; every symbol
+    // the codes fix is graded evidence of tampering.
+    let integrityScore = payloadRecovered && recoveredPayload?.documentHash === currentHash ? 1.0 : (payloadRecovered ? 0.5 : 0.0);
+    if (report.uncorrectableBlocks > 0) {
+        integrityScore = Math.min(integrityScore, 0.25);
+    } else if (report.totalCorrections > 0) {
+        // Scale penalty with the amount of correction (caps at ~0.5 off).
+        integrityScore = Math.max(0, integrityScore - Math.min(0.5, report.totalCorrections * 0.05));
+    }
 
     return {
         detected,
@@ -90,6 +119,7 @@ export function detectWatermark(
         payloadRecovered,
         integrityScore,
         recoveredPayload,
-        warnings
+        warnings,
+        ecc: eccStats
     };
 }

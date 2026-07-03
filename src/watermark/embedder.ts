@@ -3,7 +3,7 @@ import { ProvenancePayload } from '../types';
 import { hashDocument } from '../crypto/hash';
 import { signPayload } from '../crypto/signature';
 import { serializePayload, payloadToBits } from '../payload/bitstream';
-import { RepetitionCode } from '../ecc';
+import { ConcatenatedCode } from '../ecc';
 import { bitToUnicode } from '../unicode';
 import { getPlacementPositions } from './placement';
 
@@ -26,8 +26,9 @@ export function embedWatermark(
     // 3. Bitstream
     const bits = payloadToBits(wrapper);
 
-    // 4. ECC Encoding
-    const ecc = new RepetitionCode(3);
+    // 4. ECC Encoding: BCH (inner, scattered bit flips) + Reed-Solomon
+    //    (outer, burst/symbol tampering), concatenated.
+    const ecc = new ConcatenatedCode();
     const encodedBits = ecc.encode(bits);
 
     // 5. Keyed Placement
