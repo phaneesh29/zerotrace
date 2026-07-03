@@ -1,76 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZeroTrace</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroTrace // Text Watermarking & Verification</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Marked Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>ZeroTrace</h1>
-    <p class="subtitle">Keyed Unicode Watermarking Framework for AI Generated Text Provenance</p>
+  <header class="header">
+    <div class="header-logo">
+      ZeroTrace <span class="logo-badge">Enterprise Edition</span>
+    </div>
+    <h1 class="header-title">Text Watermarking &amp; Verification System</h1>
+    <p class="subtitle">Cryptographically verify text authenticity and detect edits using secure, invisible Unicode watermarks.</p>
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="encode">Encode</button>
-    <button class="tab-btn" data-tab="decode">Decode</button>
+    <button class="tab-btn active" data-tab="encode">
+      Watermark Text
+    </button>
+    <button class="tab-btn" data-tab="decode">
+      Verify Text
+    </button>
   </nav>
 
-  <main>
-    <!-- ENCODE TAB -->
+  <main class="container">
+    <!-- ENCODE PANEL -->
     <section id="encode" class="tab-panel active">
-      <h2>Generate &amp; Watermark</h2>
-      <p class="hint">Enter a prompt. Mistral generates the text, then ZeroTrace embeds an invisible, cryptographically signed watermark into it.</p>
+      <div class="panel-header">
+        <h2 class="panel-title">Add Watermark</h2>
+        <span class="panel-badge encode-badge">ACTIVE</span>
+      </div>
+      <p class="hint">Input a prompt below. The system will generate text using the AI model, sign the provenance payload with a private key, and embed an invisible watermark.</p>
 
-      <label for="prompt">Prompt</label>
-      <textarea id="prompt" rows="4" placeholder="Write a short paragraph about..."></textarea>
+      <div class="input-group">
+        <label for="prompt" class="corp-label">Prompt</label>
+        <div class="textarea-wrapper">
+          <textarea id="prompt" rows="3" placeholder="Enter prompt here to generate text..."></textarea>
+        </div>
+      </div>
 
-      <button id="encode-btn">Generate &amp; Watermark</button>
+      <button id="encode-btn" class="corp-btn primary-btn">
+        Generate &amp; Watermark Text
+      </button>
 
       <div id="encode-status" class="status"></div>
 
+      <!-- ENCODE RESULTS -->
       <div id="encode-results" class="results hidden">
-        <label>Generated text (raw)</label>
-        <textarea id="generated-text" rows="8" readonly></textarea>
+        <!-- Result Tabs: Preview vs Raw -->
+        <div class="result-tabs">
+          <button class="subtab-btn active" data-subtab="md-preview">Formatted Preview</button>
+          <button class="subtab-btn" data-subtab="raw-output">Plain Text</button>
+        </div>
 
-        <label>Watermarked text (copy this)</label>
-        <textarea id="watermarked-text" rows="8" readonly></textarea>
-        <button id="copy-watermarked" class="secondary">Copy Watermarked Text</button>
+        <div id="md-preview" class="subtab-panel active">
+          <label class="corp-label">AI Generated Response (Formatted Preview)</label>
+          <div id="rendered-markdown" class="markdown-body"></div>
+        </div>
 
-        <label>Payload</label>
-        <pre id="encode-payload" class="payload"></pre>
+        <div id="raw-output" class="subtab-panel">
+          <label for="generated-text" class="corp-label">AI Generated Response (Raw Output)</label>
+          <div class="textarea-wrapper">
+            <textarea id="generated-text" rows="8" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="output-divider"></div>
+
+        <div class="input-group">
+          <div class="flex-row">
+            <label for="watermarked-text" class="corp-label">Watermarked Text <span class="label-desc">(Contains invisible signature data)</span></label>
+            <button id="copy-watermarked" class="corp-btn mini-btn">Copy Text</button>
+          </div>
+          <div class="textarea-wrapper">
+            <textarea id="watermarked-text" class="watermarked-area" rows="8" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="payload-container">
+          <label class="corp-label">Metadata Payload</label>
+          <pre id="encode-payload" class="payload"></pre>
+        </div>
       </div>
     </section>
 
-    <!-- DECODE TAB -->
+    <!-- DECODE PANEL -->
     <section id="decode" class="tab-panel">
-      <h2>Detect &amp; Verify</h2>
-      <p class="hint">Paste text that may contain a ZeroTrace watermark. Detection recovers the payload, verifies the signature, and reports tamper evidence.</p>
+      <div class="panel-header">
+        <h2 class="panel-title">Verification Analyzer</h2>
+        <span class="panel-badge decode-badge">READY</span>
+      </div>
+      <p class="hint">Paste text here to verify its authenticity. The analyzer will extract the watermark, repair any minor errors, verify the cryptographic signature, and score the text integrity.</p>
 
-      <label for="decode-input">Text to check</label>
-      <textarea id="decode-input" rows="10" placeholder="Paste watermarked text here..."></textarea>
+      <div class="input-group">
+        <label for="decode-input" class="corp-label">Text to Verify</label>
+        <div class="textarea-wrapper">
+          <textarea id="decode-input" rows="8" placeholder="Paste watermarked text here to verify..."></textarea>
+        </div>
+      </div>
 
-      <button id="decode-btn">Detect Watermark</button>
+      <button id="decode-btn" class="corp-btn secondary-btn">
+        Verify Text
+      </button>
 
       <div id="decode-status" class="status"></div>
 
+      <!-- DECODE RESULTS -->
       <div id="decode-results" class="results hidden">
-        <div class="grid">
-          <div class="stat"><span class="label">Detected</span><span id="r-detected" class="value"></span></div>
-          <div class="stat"><span class="label">Signature Valid</span><span id="r-sig" class="value"></span></div>
-          <div class="stat"><span class="label">Confidence</span><span id="r-conf" class="value"></span></div>
-          <div class="stat"><span class="label">Integrity Score</span><span id="r-integrity" class="value"></span></div>
+        
+        <!-- Verification Result Banner -->
+        <div id="tamper-alert" class="alert-banner">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <div class="alert-title">VERIFICATION FAILED</div>
+            <div id="alert-msg" class="alert-desc">The watermark has been modified or does not exist.</div>
+          </div>
         </div>
 
-        <div id="ecc-block" class="ecc"></div>
+        <div class="grid">
+          <div class="stat">
+            <span class="label">WATERMARK DETECTED</span>
+            <span id="r-detected" class="value"></span>
+          </div>
+          <div class="stat">
+            <span class="label">SIGNATURE VALID</span>
+            <span id="r-sig" class="value"></span>
+          </div>
+          <div class="stat">
+            <span class="label">RECOVERY CONFIDENCE</span>
+            <span id="r-conf" class="value"></span>
+          </div>
+          <div class="stat">
+            <span class="label">INTEGRITY SCORE</span>
+            <span id="r-integrity" class="value"></span>
+          </div>
+        </div>
+
+        <!-- Telemetry Card -->
+        <div class="telemetry-card">
+          <div class="tel-header">ERROR CORRECTION STATISTICS (ECC)</div>
+          <div id="ecc-block" class="ecc-details"></div>
+          <div class="progress-bar-container">
+            <div id="ecc-health-bar" class="progress-bar" style="width: 100%"></div>
+          </div>
+        </div>
+
         <div id="warnings-block" class="warnings"></div>
 
-        <label>Recovered Payload</label>
-        <pre id="decode-payload" class="payload"></pre>
+        <div class="payload-container">
+          <label class="corp-label">Recovered Metadata</label>
+          <pre id="decode-payload" class="payload"></pre>
+        </div>
       </div>
     </section>
   </main>
+
+  <footer class="footer">
+    <p>&copy; ZeroTrace Enterprise. Powered by BCH and Reed-Solomon Error Correction Code verification.</p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
