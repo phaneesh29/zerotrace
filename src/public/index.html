@@ -163,6 +163,15 @@
 
         <div id="warnings-block" class="warnings"></div>
 
+        <!-- Diff Analysis Display -->
+        <div id="diff-analysis-display" class="search-results-box hidden" style="margin-top: 1.2rem; border-color: var(--warn-border); background: var(--warn-bg);">
+          <h3 style="color: var(--warn); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+            <span>🔍</span> Text Diff Analysis (Tamper Detection)
+          </h3>
+          <p class="hint" style="margin-bottom: 0.75rem;">Below is a comparison highlighting modified parts (green: additions, red/strikethrough: deletions):</p>
+          <div id="diff-content-block" class="markdown-body" style="background: #ffffff; border-color: var(--warn-border); max-height: 250px; overflow-y: auto; font-family: inherit; font-size: 0.9rem;"></div>
+        </div>
+
         <div class="payload-container">
           <label class="corp-label">Recovered Metadata</label>
           <pre id="decode-payload" class="payload"></pre>

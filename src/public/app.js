@@ -44,10 +44,17 @@ const renderedMarkdownEl = document.getElementById('rendered-markdown');
 const encodePayloadEl = document.getElementById('encode-payload');
 const copyBtn = document.getElementById('copy-watermarked');
 
+// Global Session Memory
+let lastGeneratedText = '';
+
 // Tavily Web Search Elements
 const searchResultsDisplay = document.getElementById('search-results-display');
 const searchAnswerBlock = document.getElementById('search-answer-block');
 const searchSourcesList = document.getElementById('search-sources-list');
+
+// Diff Analysis Elements
+const diffAnalysisDisplay = document.getElementById('diff-analysis-display');
+const diffContentBlock = document.getElementById('diff-content-block');
 
 encodeBtn.addEventListener('click', async () => {
   const prompt = promptInput.value.trim();
@@ -75,6 +82,7 @@ encodeBtn.addEventListener('click', async () => {
 
     // Populate fields
     generatedTextEl.value = data.generatedText;
+    lastGeneratedText = data.generatedText;
     watermarkedTextEl.value = data.watermarkedText;
     encodePayloadEl.textContent = JSON.stringify(data.payload, null, 2);
     
@@ -228,6 +236,9 @@ decodeBtn.addEventListener('click', async () => {
         if (!data.signatureValid) reasons.push('the cryptographic signature is invalid (authenticity compromised)');
         if (data.ecc && data.ecc.uncorrectableBlocks > 0) reasons.push('data blocks are uncorrectable (heavy modifications)');
         if (data.warnings.some(w => w.includes('hash mismatch'))) reasons.push('document content mismatch (text edits detected)');
+        if (data.warnings.some(w => w.includes('Failed to parse payload bitstream'))) {
+          reasons.push('failed to parse payload (modifications shifted zero-width bitstream out of alignment)');
+        }
         
         alertMsg.textContent = `Watermark detected, but validation failed: ${reasons.join(', ')}.`;
         document.querySelector('.alert-title').textContent = 'Verification Failed';
@@ -243,6 +254,25 @@ decodeBtn.addEventListener('click', async () => {
       ? JSON.stringify(data.recoveredPayload, null, 2)
       : 'No payload recovered.';
 
+    // Diff calculation
+    const cleanVerifyText = stripWatermarkJS(text);
+    if (lastGeneratedText) {
+      const normalizedOriginal = lastGeneratedText.replace(/\r\n/g, '\n').trim();
+      const normalizedCurrent = cleanVerifyText.replace(/\r\n/g, '\n').trim();
+
+      if (normalizedOriginal !== normalizedCurrent) {
+        // Text was changed! Compute diff
+        const diffHtml = diffWords(normalizedOriginal, normalizedCurrent);
+        diffContentBlock.innerHTML = diffHtml;
+        diffAnalysisDisplay.classList.remove('hidden');
+      } else {
+        diffAnalysisDisplay.classList.add('hidden');
+      }
+    } else {
+      diffContentBlock.innerHTML = '<span style="color:var(--text-dim); font-style:italic;">Original generated text not found in the current session. Cannot perform diff analysis.</span>';
+      diffAnalysisDisplay.classList.remove('hidden');
+    }
+
     decodeResults.classList.remove('hidden');
     setStatus(decodeStatus, 'Forensics analysis complete.', 'ok');
   } catch (err) {
@@ -251,3 +281,68 @@ decodeBtn.addEventListener('click', async () => {
     decodeBtn.disabled = false;
   }
 });
+
+// --- Diff Analysis & Watermark Stripping Helpers ---
+
+function stripWatermarkJS(text) {
+  return text.replace(/[\u200B\u200C]/g, '');
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function diffWords(original, current) {
+  const origWords = original.split(/(\s+)/);
+  const currWords = current.split(/(\s+)/);
+  
+  // Dynamic programming for Longest Common Subsequence (LCS)
+  const dp = Array(origWords.length + 1).fill(null).map(() => Array(currWords.length + 1).fill(0));
+  
+  for (let i = 1; i <= origWords.length; i++) {
+    for (let j = 1; j <= currWords.length; j++) {
+      if (origWords[i - 1] === currWords[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+  
+  // Backtrack to build the diff representation
+  let i = origWords.length;
+  let j = currWords.length;
+  const diff = [];
+  
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && origWords[i - 1] === currWords[j - 1]) {
+      diff.push({ type: 'equal', val: origWords[i - 1] });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      diff.push({ type: 'insert', val: currWords[j - 1] });
+      j--;
+    } else {
+      diff.push({ type: 'delete', val: origWords[i - 1] });
+      i--;
+    }
+  }
+  
+  diff.reverse();
+  
+  // Map words to inline HTML tags with premium highlights
+  return diff.map(part => {
+    if (part.type === 'insert') {
+      return `<ins style="background: #ecfdf5; color: #047857; text-decoration: none; border-bottom: 1px solid #10b981; padding: 0 2px; border-radius: 2px; font-weight: 500;">${escapeHtml(part.val)}</ins>`;
+    } else if (part.type === 'delete') {
+      return `<del style="background: #fef2f2; color: #b91c1c; text-decoration: line-through; border-bottom: 1px solid #ef4444; padding: 0 2px; border-radius: 2px;">${escapeHtml(part.val)}</del>`;
+    } else {
+      return escapeHtml(part.val);
+    }
+  }).join('');
+}
