@@ -16,7 +16,7 @@
 <body>
   <header class="header">
     <div class="header-logo">
-      ZeroTrace <span class="logo-badge">Enterprise Edition</span>
+      ZeroTrace
     </div>
     <h1 class="header-title">Text Watermarking &amp; Verification System</h1>
     <p class="subtitle">Cryptographically verify text authenticity and detect edits using secure, invisible Unicode watermarks.</p>
@@ -47,6 +47,7 @@
         </div>
       </div>
 
+
       <button id="encode-btn" class="corp-btn primary-btn">
         Generate &amp; Watermark Text
       </button>
@@ -71,6 +72,13 @@
           <div class="textarea-wrapper">
             <textarea id="generated-text" rows="8" readonly></textarea>
           </div>
+        </div>
+
+        <!-- Tavily Web Search Results Display -->
+        <div id="search-results-display" class="search-results-box hidden">
+          <h3>Web Search Results (Tavily Grounding Context)</h3>
+          <div id="search-answer-block" class="hint" style="margin-bottom: 0.75rem; font-style: italic;"></div>
+          <ul id="search-sources-list"></ul>
         </div>
 
         <div class="output-divider"></div>
@@ -164,7 +172,7 @@
   </main>
 
   <footer class="footer">
-    <p>&copy; ZeroTrace Enterprise. Powered by BCH and Reed-Solomon Error Correction Code verification.</p>
+    <p>&copy; ZeroTrace. Powered by BCH and Reed-Solomon Error Correction Code verification.</p>
   </footer>
 
   <script src="app.js"></script>

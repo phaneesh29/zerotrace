@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { KeyObject } from 'crypto';
 import { embedWatermark } from '../../watermark/embedder';
 import { ProvenancePayload } from '../../types';
-import { generateText } from '../lib/mistral';
+import { runAgent } from '../lib/agent';
 import { SECRET_KEY } from '../../config';
 
 export function createEncodeRouter(privateKey: KeyObject): Router {
@@ -16,7 +16,10 @@ export function createEncodeRouter(privateKey: KeyObject): Router {
                 return res.status(400).json({ error: 'Field "prompt" (non-empty string) is required.' });
             }
 
-            const generated = await generateText(prompt, { model });
+            // Run ToolLoopAgent autonomously, always allowing it to search when needed
+            const { text: generatedText, searchResults } = await runAgent(prompt, { 
+                enableSearch: true 
+            });
 
             const payload: ProvenancePayload = {
                 version: '1.0',
@@ -27,13 +30,14 @@ export function createEncodeRouter(privateKey: KeyObject): Router {
                 documentHash: '', // populated by embedWatermark
             };
 
-            const watermarkedText = embedWatermark(generated, payload, privateKey, SECRET_KEY);
+            const watermarkedText = embedWatermark(generatedText, payload, privateKey, SECRET_KEY);
 
             res.json({
                 prompt,
-                generatedText: generated,
+                generatedText,
                 watermarkedText,
                 payload,
+                searchResults,
             });
         } catch (err) {
             console.error('Error during encode:', err);
@@ -43,3 +47,4 @@ export function createEncodeRouter(privateKey: KeyObject): Router {
 
     return router;
 }
+

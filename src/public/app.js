@@ -44,6 +44,11 @@ const renderedMarkdownEl = document.getElementById('rendered-markdown');
 const encodePayloadEl = document.getElementById('encode-payload');
 const copyBtn = document.getElementById('copy-watermarked');
 
+// Tavily Web Search Elements
+const searchResultsDisplay = document.getElementById('search-results-display');
+const searchAnswerBlock = document.getElementById('search-answer-block');
+const searchSourcesList = document.getElementById('search-sources-list');
+
 encodeBtn.addEventListener('click', async () => {
   const prompt = promptInput.value.trim();
   if (!prompt) {
@@ -53,6 +58,7 @@ encodeBtn.addEventListener('click', async () => {
 
   encodeBtn.disabled = true;
   encodeResults.classList.add('hidden');
+  searchResultsDisplay.classList.add('hidden');
   setStatus(encodeStatus, 'Contacting generation engine & signing payload...', 'loading');
 
   try {
@@ -77,6 +83,31 @@ encodeBtn.addEventListener('click', async () => {
       renderedMarkdownEl.innerHTML = window.marked.parse(data.generatedText);
     } else {
       renderedMarkdownEl.innerHTML = `<p>${data.generatedText.replace(/\n/g, '<br>')}</p>`;
+    }
+
+    // Render Tavily Search Results if present
+    if (data.searchResults) {
+      searchSourcesList.innerHTML = '';
+      if (data.searchResults.answer) {
+        searchAnswerBlock.innerHTML = `<strong>Tavily Answer Summary:</strong> ${data.searchResults.answer}`;
+        searchAnswerBlock.style.display = 'block';
+      } else {
+        searchAnswerBlock.innerHTML = '';
+        searchAnswerBlock.style.display = 'none';
+      }
+
+      if (data.searchResults.results && data.searchResults.results.length > 0) {
+        data.searchResults.results.forEach((src, idx) => {
+          const li = document.createElement('li');
+          li.innerHTML = `[Source ${idx + 1}] <a href="${src.url}" target="_blank">${src.title || src.url}</a> (Score: ${Math.round(src.score * 100)}%)<br><span style="font-size:0.8rem; color:var(--text-muted); display: block; margin-top: 0.15rem;">${src.content}</span>`;
+          searchSourcesList.appendChild(li);
+        });
+      } else {
+        searchSourcesList.innerHTML = '<li>No relevant sources found.</li>';
+      }
+      searchResultsDisplay.classList.remove('hidden');
+    } else {
+      searchResultsDisplay.classList.add('hidden');
     }
 
     encodeResults.classList.remove('hidden');
