@@ -86,7 +86,10 @@
         <div class="input-group">
           <div class="flex-row">
             <label for="watermarked-text" class="corp-label">Watermarked Text <span class="label-desc">(Contains invisible signature data)</span></label>
-            <button id="copy-watermarked" class="corp-btn mini-btn">Copy Text</button>
+            <div>
+              <button id="copy-watermarked" class="corp-btn mini-btn">Copy Text</button>
+              <button id="verify-directly" class="corp-btn mini-btn" style="background: var(--accent-bg); color: var(--accent); border-color: var(--accent); margin-left: 0.5rem;">Verify Directly</button>
+            </div>
           </div>
           <div class="textarea-wrapper">
             <textarea id="watermarked-text" class="watermarked-area" rows="8" readonly></textarea>

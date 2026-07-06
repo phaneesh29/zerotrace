@@ -17,12 +17,12 @@ export function generateKeyPair(): KeyPair {
 
 export function signPayload(payloadJson: string, privateKey: KeyObject): string {
     const signature = sign(null, Buffer.from(payloadJson, 'utf8'), privateKey);
-    return signature.toString('hex');
+    return signature.toString('base64');
 }
 
-export function verifyPayload(payloadJson: string, signatureHex: string, publicKey: KeyObject): boolean {
+export function verifyPayload(payloadJson: string, signatureBase64: string, publicKey: KeyObject): boolean {
     try {
-        const signature = Buffer.from(signatureHex, 'hex');
+        const signature = Buffer.from(signatureBase64, 'base64');
         return verify(null, Buffer.from(payloadJson, 'utf8'), publicKey, signature);
     } catch (e) {
         return false;

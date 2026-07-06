@@ -43,6 +43,7 @@ const watermarkedTextEl = document.getElementById('watermarked-text');
 const renderedMarkdownEl = document.getElementById('rendered-markdown');
 const encodePayloadEl = document.getElementById('encode-payload');
 const copyBtn = document.getElementById('copy-watermarked');
+const verifyDirectlyBtn = document.getElementById('verify-directly');
 
 // Global Session Memory
 let lastGeneratedText = '';
@@ -136,6 +137,22 @@ copyBtn.addEventListener('click', async () => {
     copyBtn.textContent = 'Copy Output';
     copyBtn.classList.remove('ok');
   }, 2000);
+});
+
+// Verify Directly button behavior
+verifyDirectlyBtn.addEventListener('click', () => {
+  decodeInput.value = watermarkedTextEl.value;
+  
+  // Switch to Verification tab
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+  
+  const decodeTabBtn = document.querySelector('.tab-btn[data-tab="decode"]');
+  decodeTabBtn.classList.add('active');
+  document.getElementById('decode').classList.add('active');
+  
+  // Trigger verification click
+  decodeBtn.click();
 });
 
 // --- Decode / Verification Flow ---
