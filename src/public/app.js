@@ -273,8 +273,9 @@ decodeBtn.addEventListener('click', async () => {
 
     // Diff calculation
     const cleanVerifyText = stripWatermarkJS(text);
-    if (lastGeneratedText) {
-      const normalizedOriginal = lastGeneratedText.replace(/\r\n/g, '\n').trim();
+    const originalText = data.originalText || lastGeneratedText;
+    if (originalText) {
+      const normalizedOriginal = originalText.replace(/\r\n/g, '\n').trim();
       const normalizedCurrent = cleanVerifyText.replace(/\r\n/g, '\n').trim();
 
       if (normalizedOriginal !== normalizedCurrent) {

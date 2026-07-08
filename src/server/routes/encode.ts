@@ -4,6 +4,7 @@ import { embedWatermark } from '../../watermark/embedder';
 import { ProvenancePayload } from '../../types';
 import { runAgent } from '../lib/agent';
 import { SECRET_KEY } from '../../config';
+import { addToHistory } from '../lib/history';
 
 export function createEncodeRouter(privateKey: KeyObject): Router {
     const router = Router();
@@ -31,6 +32,15 @@ export function createEncodeRouter(privateKey: KeyObject): Router {
             };
 
             const watermarkedText = embedWatermark(generatedText, payload, privateKey, SECRET_KEY);
+
+            // Save to persistent history
+            addToHistory({
+                prompt,
+                generatedText,
+                watermarkedText,
+                payload,
+                timestamp: payload.timestamp
+            });
 
             res.json({
                 prompt,

@@ -15,6 +15,7 @@ demo-keys.json
 
 # Output files
 watermarked.txt
+watermark_history.json
 
 # Editor and OS files
 .vscode/
