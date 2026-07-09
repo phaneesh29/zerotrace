@@ -9,7 +9,7 @@
 \author{
 \IEEEauthorblockN{Sreephaneesha Kanugovi\IEEEauthorrefmark{1}, Vivek Gowda S\IEEEauthorrefmark{1}, Chandan R A\IEEEauthorrefmark{1}, and Dr. Vidhya K\IEEEauthorrefmark{2}}
 \IEEEauthorblockA{\IEEEauthorrefmark{1}Department of Computer Science and Engineering (AI \& ML), PES University, Bengaluru, India\\
-Email: \{AM314, AM355, AM355\}@pes.edu}
+Email: \{PES1UG23AM314, PES1UG23AM355, PES1UG23AM917\}@pes.edu}
 \IEEEauthorblockA{\IEEEauthorrefmark{2}Department of Computer Science and Engineering, PES University, Bengaluru, India\\
 Email: vidhyak@pes.edu}
 }
@@ -45,10 +45,8 @@ The primary contributions of this work are:
     \item \textbf{Tamper Telemetry}: Exposing a quantitative Integrity Score derived from the active ECC corrections required during decoding.
 \end{itemize}
 
----
-
 \section{System Architecture}
-The ZeroTrace architecture consists of six modular pipeline stages divided into the **Embedding Pipeline** and the **Extraction Pipeline**. The visual representations of these workflows are detailed in Fig. 1 and Fig. 2.
+The ZeroTrace architecture consists of six modular pipeline stages divided into the Embedding Pipeline and the Extraction Pipeline. The visual representations of these workflows are detailed in Fig. 1 and Fig. 2.
 
 \begin{figure}[htbp]
 \centering
@@ -117,8 +115,6 @@ The core modules operate as follows:
     \item \textbf{Keyed Placement Engine}: Uses an HMAC-SHA256 generator initialized with the server secret key. The engine hashes the combination of the document hash and nonce to compute pseudorandom offset indexes corresponding to word boundaries in the text.
     \item \textbf{Unicode Steganographic Channel}: Interacts directly with the text strings, inserting or reading zero-width characters (\texttt{\textbackslash u200B} for \texttt{0} and \texttt{\textbackslash u200C} for \texttt{1}) at the computed boundaries.
 \end{itemize}
-
----
 
 \section{Mathematical Formulations}
 This section details the mathematical models governing ZeroTrace's cryptographic security, Galois Field arithmetic, error-correcting codes, and structural alignment.
@@ -218,8 +214,8 @@ We backtrack from $DP[m, n]$ to identify the matching indices:
 \end{equation}
 Let $W_{orig}$ be the set of indices in $T_{orig}$ that contain zero-width characters. For each $w \in W_{orig}$:
 \begin{itemize}
-    \item If $\exists (w, j) \in \mathcal{M}$, the bit associated with $a_w$ is retrieved from $T_{recv}[j]$ and marked as a **successful match**.
-    \item If no such tuple exists, the bit is marked as an **erasure** (lossy bit), and its position is forwarded to the ECC decoder for correction.
+    \item If $\exists (w, j) \in \mathcal{M}$, the bit associated with $a_w$ is retrieved from $T_{recv}[j]$ and marked as a \textbf{successful match}.
+    \item If no such tuple exists, the bit is marked as an \textbf{erasure} (lossy bit), and its position is forwarded to the ECC decoder for correction.
 \end{itemize}
 
 \subsection{Jaccard Similarity Lookup}
@@ -230,35 +226,35 @@ J(W_{tgt}, W_{hist}) = \frac{|W_{tgt} \cap W_{hist}|}{|W_{tgt} \cup W_{hist}|}
 The database returns the history entry with the highest similarity score, provided $J \geq 0.3$.
 
 \subsection{Graded Tamper Telemetry Scoring}
-Rather than returning a binary result, ZeroTrace outputs a quantitative representation of text integrity. The continuous **Integrity Score** $I_{score} \in [0, 1]$ is defined as:
+Rather than returning a binary result, ZeroTrace outputs a quantitative representation of text integrity. The continuous Integrity Score $I_{score} \in [0, 1]$ is defined as:
 \begin{equation}
 I_{score} = 1.0 - \left( w_1 \frac{C_{bch}}{L_{bits}} + w_2 \frac{C_{rs}}{L_{bytes}} + w_3 \frac{U_{blocks}}{B_{total}} \right)
 \end{equation}
 where:
-*   $C_{bch}$ is the count of bit errors corrected by the BCH inner stage.
-*   $C_{rs}$ is the count of byte symbol errors corrected by the Reed--Solomon outer stage.
-*   $U_{blocks}$ is the number of uncorrectable blocks.
-*   $L_{bits}, L_{bytes}, B_{total}$ represent total bits, bytes, and ECC blocks respectively.
-*   $w_1, w_2, w_3$ are weights satisfying $0 < w_1 < w_2 \ll w_3$, indicating that uncorrectable blocks decrease text integrity more than minor bit corrections.
-
----
+\begin{itemize}
+    \item $C_{bch}$ is the count of bit errors corrected by the BCH inner stage.
+    \item $C_{rs}$ is the count of byte symbol errors corrected by the Reed--Solomon outer stage.
+    \item $U_{blocks}$ is the number of uncorrectable blocks.
+    \item $L_{bits}, L_{bytes}, B_{total}$ represent total bits, bytes, and ECC blocks respectively.
+    \item $w_1, w_2, w_3$ are weights satisfying $0 < w_1 < w_2 \ll w_3$, indicating that uncorrectable blocks decrease text integrity more than minor bit corrections.
+\end{itemize}
 
 \section{Implementation Details}
 ZeroTrace was developed in TypeScript and runs on Node.js. It features a separate backend API server and an interactive web interface.
 
 \subsection{REST API Schema}
 \begin{itemize}
-    \item `POST /api/encode`: Receives a text prompt and model identifier. The server runs an autonomous search agent (utilizing the Vercel AI SDK and Mistral APIs) to retrieve facts via the Tavily Search API. The generated text is passed to the embedding module, which returns the watermarked text and saves the record in `watermark_history.json`.
-    \item `POST /api/decode`: Receives the text to analyze. The system canonicalizes it, checks history using word-level Jaccard similarity, and runs the LCS alignment algorithm. It extracts the zero-width bits, passes them to the concatenated BCH/RS decoders, and verifies the RSA signature. The response contains the recovered provenance metadata and the graded tamper telemetry.
+    \item \texttt{POST /api/encode}: Receives a text prompt and model identifier. The server runs an autonomous search agent (utilizing the Vercel AI SDK and Mistral APIs) to retrieve facts via the Tavily Search API. The generated text is passed to the embedding module, which returns the watermarked text and saves the record in \texttt{watermark\_history.json}.
+    \item \texttt{POST /api/decode}: Receives the text to analyze. The system canonicalizes it, checks history using word-level Jaccard similarity, and runs the LCS alignment algorithm. It extracts the zero-width bits, passes them to the concatenated BCH/RS decoders, and verifies the RSA signature. The response contains the recovered provenance metadata and the graded tamper telemetry.
 \end{itemize}
 
 \subsection{ECC Implementation}
 The ECC components are built from scratch to prevent external library dependency overhead:
-*   [src/ecc/gf256.ts](file:///D:/pilabs/zerotrace/src/ecc/gf256.ts) computes Galois Field multiplication/division using logarithmic tables.
-*   [src/ecc/reedSolomon.ts](file:///D:/pilabs/zerotrace/src/ecc/reedSolomon.ts) encodes data block-by-block and decodes them by computing syndrome polynomials and solving the error-locator polynomial via Berlekamp--Massey.
-*   [src/ecc/bch.ts](file:///D:/pilabs/zerotrace/src/ecc/bch.ts) handles bit-level syndrome computation and error inversion.
-
----
+\begin{itemize}
+    \item \texttt{src/ecc/gf256.ts} computes Galois Field multiplication/division using logarithmic tables.
+    \item \texttt{src/ecc/reedSolomon.ts} encodes data block-by-block and decodes them by computing syndrome polynomials and solving the error-locator polynomial via Berlekamp--Massey.
+    \item \texttt{src/ecc/bch.ts} handles bit-level syndrome computation and error inversion.
+\end{itemize}
 
 \section{Experimental Results and Discussion}
 To evaluate the robustness of ZeroTrace, watermarked documents (average length: 1,500 characters, containing a 1,200-bit watermark signature) were subjected to different editing attacks. We measured the Bit Error Rate (BER) before decoding, the payload recovery status, signature validation, and the final Integrity Score. The comparison with other watermarking strategies is detailed in Table I.
@@ -307,17 +303,15 @@ We simulated three attack models to test ZeroTrace's recovery limits:
 \label{tab:robustness}
 \end{table}
 
----
-
 \section{Advantages and Limitations}
 ZeroTrace provides key advantages:
-*   \textbf{High Capacity & Secrecy}: Standard steganography hides data without visible artifacts.
-*   \textbf{Cryptographic Security}: The RSA-SHA256 signature guarantees non-repudiation and prevents provenance forgery.
-*   \textbf{Algorithmic Resilience}: The combination of LCS alignment and concatenated ECC provides robust recovery against realistic editing attacks.
+\begin{itemize}
+    \item \textbf{High Capacity \& Secrecy}: Standard steganography hides data without visible artifacts.
+    \item \textbf{Cryptographic Security}: The RSA-SHA256 signature guarantees non-repudiation and prevents provenance forgery.
+    \item \textbf{Algorithmic Resilience}: The combination of LCS alignment and concatenated ECC provides robust recovery against realistic editing attacks.
+\end{itemize}
 
 The main limitation is that extreme rewriting or paraphrasing (where more than 30\% of the original text is changed or replaced) exceeds the correction bounds of the $BCH(255, 191, 8)$ and Reed--Solomon codecs. In these cases, the watermark cannot be recovered.
-
----
 
 \section{Conclusion and Future Work}
 This paper presented ZeroTrace, an invisible, cryptographically verifiable, and error-resilient text watermarking framework. By integrating RSA-2048 signing and SHA-256 document binding with a concatenated Reed--Solomon and BCH coding scheme, ZeroTrace ensures content provenance and integrity. The character-level LCS alignment dynamically compensates for frame-shift synchronization errors caused by text deletion, while the error-correcting codes recover the original signature payload.
