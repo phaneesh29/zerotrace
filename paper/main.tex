@@ -1,16 +1,41 @@
 \documentclass[conference]{IEEEtran}
 \usepackage{amsmath,amssymb,graphicx,booktabs,multirow,url,tikz}
-\usetikzlibrary{shapes.geometric,arrows.meta,positioning}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds,calc}
+
+\makeatletter
+\newcommand{\linebreakand}{%
+  \end{@IEEEauthorhalign}
+  \hfill\mbox{}\par
+  \mbox{}\hfill\begin{@IEEEauthorhalign}
+}
+\makeatother
 
 \begin{document}
 
 \title{ZeroTrace: A Cryptographically Verifiable and Error-Resilient Text Watermarking Engine with Graded Tamper Telemetry}
 
 \author{
-\IEEEauthorblockN{Sreephaneesha Kanugovi\IEEEauthorrefmark{1}, Vivek Gowda S\IEEEauthorrefmark{1}, Chandan R A\IEEEauthorrefmark{1}, and Dr. Vidhya K\IEEEauthorrefmark{2}}
-\IEEEauthorblockA{\IEEEauthorrefmark{1}Department of Computer Science and Engineering (AI \& ML), PES University, Bengaluru, India\\
-Email: \{PES1UG23AM314, PES1UG23AM355, PES1UG23AM917\}@pes.edu}
-\IEEEauthorblockA{\IEEEauthorrefmark{2}Department of Computer Science and Engineering, PES University, Bengaluru, India\\
+\IEEEauthorblockN{Sreephaneesha Kanugovi}
+\IEEEauthorblockA{Computer Science Engineering (AIML)\\
+PES University, Bengaluru, India\\
+SRN: PES1UG23AM314\\
+Email: pes1ug23am314@pes.edu}
+\and
+\IEEEauthorblockN{Vivek Gowda S}
+\IEEEauthorblockA{Computer Science Engineering (AIML)\\
+PES University, Bengaluru, India\\
+SRN: PES1UG23AM355\\
+Email: pes1ug23am355@pes.edu}
+\and
+\IEEEauthorblockN{Chandan R}
+\IEEEauthorblockA{Computer Science Engineering (AIML)\\
+PES University, Bengaluru, India\\
+SRN: PES1UG23AM917\\
+Email: pes1ug23am917@pes.edu}
+\linebreakand
+\IEEEauthorblockN{Dr. Vidhya K (Mentor)}
+\IEEEauthorblockA{Computer Science Engineering\\
+PES University, Bengaluru, India\\
 Email: vidhyak@pes.edu}
 }
 
@@ -51,58 +76,106 @@ The ZeroTrace architecture consists of six modular pipeline stages divided into 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    node distance=0.9cm and 1cm,
-    box/.style={draw, rectangle, rounded corners, minimum width=3.5cm, minimum height=0.65cm, align=center, fill=blue!5!white, font=\footnotesize},
-    arrow/.style={-Latex, thick}
+    node distance=0.45cm and 0.6cm,
+    box/.style={draw, rectangle, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, align=center, fill=blue!5!white, font=\scriptsize, draw=blue!40!black, thick},
+    inputbox/.style={draw, rectangle, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, align=center, fill=green!5!white, font=\scriptsize\bfseries, draw=green!40!black, thick},
+    keybox/.style={draw, chamfered rectangle, minimum width=1.6cm, minimum height=0.5cm, align=center, fill=yellow!10!white, font=\tiny\itshape, draw=yellow!50!orange, thick},
+    subsystem/.style={draw, dashed, rounded corners=4pt, inner sep=0.15cm, draw=gray!60, fill=gray!2},
+    arrow/.style={-Latex, thick, draw=blue!40!black},
+    line/.style={thick, draw=blue!40!black}
 ]
-    \node (input) [box] {Input Plaintext ($D$)};
-    \node (hash) [box, below=of input] {SHA-256 Hashing\\$H = \text{Hash}(D)$};
-    \node (payload) [box, below=of hash] {Assemble Provenance Payload\\(Nonce, Timestamp, Provider, etc.)};
-    \node (sign) [box, below=of payload] {RSA-2048 Signing\\$S = \text{Sign}_{K_{priv}}(Payload)$};
-    \node (rs) [box, below=of sign] {Reed-Solomon Outer ECC Encode\\(Byte symbols over $GF(2^8)$)};
-    \node (bch) [box, below=of rs] {BCH Inner ECC Encode\\(Bitstream protection)};
-    \node (hmac) [box, below=of bch] {HMAC-SHA256 Placement\\(Keyed word-boundary offsets)};
-    \node (embed) [box, below=of hmac] {Invisible Unicode Embedding\\(\texttt{\textbackslash u200B} and \texttt{\textbackslash u200C})};
-    \node (output) [box, below=of embed] {Watermarked Text ($D_{wm}$)};
+    % Nodes
+    \node (input) [inputbox] {Input Plaintext ($D$)};
+    \node (hash) [box, right=of input] {SHA-256 Hashing\\$H = \text{Hash}(D)$};
+    
+    \node (payload) [box, below=0.6cm of input] {Assemble Payload\\(Nonce, TS, Hash, etc.)};
+    \node (key_priv) [keybox, below=0.6cm of hash] {Private Key ($K_{priv}$)};
+    \node (sign) [box] at (hash |- payload) {RSA-2048 Signing\\$S = \text{Sign}_{K_{priv}}(Payload)$};
+    
+    \node (key_sec) [keybox, below=0.6cm of payload] {Server Secret};
+    \node (hmac) [box, below=0.6cm of key_sec] {HMAC Placement\\(Keyed offsets)};
+    \node (rs) [box] at (hash |- hmac) {RS Outer Encode\\(Galois Field $GF(2^8)$)};
+    
+    \node (bch) [box, below=0.6cm of rs] {BCH Inner Encode\\(Bitstream protection)};
+    
+    \node (embed) [box] at ($(hmac.south |- bch.south)!0.5!(bch.south) - (0,0.8)$) {Unicode Embedding\\(Invisible zero-width bits)};
+    \node (output) [inputbox, below=0.5cm of embed] {Watermarked Text ($D_{wm}$)};
 
+    % Subsystems
+    \begin{scope}[on background layer]
+        \node (crypto_group) [subsystem, fit=(hash) (payload) (sign) (key_priv), label={[font=\tiny\sffamily, fill=gray!2, inner sep=2pt, anchor=north]north:Cryptographic Subsystem}] {};
+        \node (ecc_group) [subsystem, fit=(rs) (bch), label={[font=\tiny\sffamily, fill=gray!2, inner sep=2pt, anchor=north]north:Channel Coding (ECC)}] {};
+    \end{scope}
+
+    % Connections
     \draw [arrow] (input) -- (hash);
-    \draw [arrow] (hash) -- (payload);
+    \draw [arrow] (hash.south west) -- (payload.north east);
+    \draw [arrow] (hash.south) -- ++(0,-0.3) -| ($(payload.east)!0.5!(sign.west)$) |- (hmac.east);
     \draw [arrow] (payload) -- (sign);
+    \draw [arrow] (key_priv) -- (sign);
     \draw [arrow] (sign) -- (rs);
     \draw [arrow] (rs) -- (bch);
-    \draw [arrow] (bch) -- (hmac);
-    \draw [arrow] (hmac) -- (embed);
+    \draw [arrow] (bch.south) -- ([xshift=0.4cm]embed.north);
+    \draw [arrow] (key_sec) -- (hmac);
+    \draw [arrow] (hmac.south) -- ([xshift=-0.4cm]embed.north);
+    
+    % Input direct to embed connection
+    \draw [arrow] (input.west) -- ++(-0.4,0) |- (embed.west);
     \draw [arrow] (embed) -- (output);
 \end{tikzpicture}
-\caption{ZeroTrace Watermark Embedding Pipeline.}
+\caption{ZeroTrace Watermark Embedding Pipeline Architecture.}
 \label{fig:embed_pipeline}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    node distance=0.9cm and 1cm,
-    box/.style={draw, rectangle, rounded corners, minimum width=3.5cm, minimum height=0.65cm, align=center, fill=red!5!white, font=\footnotesize},
-    arrow/.style={-Latex, thick}
+    node distance=0.45cm and 0.6cm,
+    box/.style={draw, rectangle, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, align=center, fill=red!5!white, font=\scriptsize, draw=red!40!black, thick},
+    inputbox/.style={draw, rectangle, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, align=center, fill=orange!5!white, font=\scriptsize\bfseries, draw=orange!40!black, thick},
+    keybox/.style={draw, chamfered rectangle, minimum width=1.6cm, minimum height=0.5cm, align=center, fill=yellow!10!white, font=\tiny\itshape, draw=yellow!50!orange, thick},
+    subsystem/.style={draw, dashed, rounded corners=4pt, inner sep=0.15cm, draw=gray!60, fill=gray!2},
+    arrow/.style={-Latex, thick, draw=red!40!black},
+    line/.style={thick, draw=red!40!black}
 ]
-    \node (input) [box] {Received Watermarked Text ($D'_{wm}$)};
-    \node (history) [box, below=of input] {Jaccard Similarity Lookup\\(Fetch candidate $D_{wm}$ from history)};
-    \node (lcs) [box, below=of history] {LCS Character Alignment\\(Map edits and detect frame shifts)};
-    \node (extract) [box, below=of lcs] {Stego-Bitstream Extraction\\(Isolate zero-width characters)};
-    \node (bch) [box, below=of extract] {BCH Inner Decoding\\(Correct scattered bit flips)};
-    \node (rs) [box, below=of bch] {Reed-Solomon Outer Decoding\\(Correct burst block erasures)};
-    \node (verify) [box, below=of rs] {RSA Digital Signature Verification\\\& Document Hash Matching};
-    \node (telemetry) [box, below=of verify] {Graded Tamper Telemetry\\(Compute confidence \& Integrity Score)};
+    % Nodes
+    \node (input) [inputbox] {Received Text ($D'_{wm}$)};
+    \node (history) [box, right=of input] {Jaccard Lookup\\(Fetch candidate $D_{wm}$)};
+    
+    \node (lcs) [box, below=0.6cm of input] {LCS Character Alignment\\(Detect frame shifts)};
+    \node (extract) [box] at (history |- lcs) {Stego Extraction\\(Read zero-width bits)};
+    
+    \node (bch) [box, below=0.6cm of lcs] {BCH Inner Decoding\\(Correct bit errors)};
+    
+    \node (key_pub) [keybox, below=0.6cm of bch] {Public Key ($K_{pub}$)};
+    \node (rs) [box] at (history |- key_pub) {RS Outer Decoding\\(Correct burst erasures)};
+    
+    \node (verify) [box, below=0.4cm of key_pub] {RSA Verification\\\& Hash Matching};
+    \node (telemetry) [box] at (history |- verify) {Graded Tamper Telemetry\\(Compute Integrity Score)};
 
+    % Subsystems
+    \begin{scope}[on background layer]
+        \node (align_group) [subsystem, fit=(history) (lcs), label={[font=\tiny\sffamily, fill=gray!2, inner sep=2pt, anchor=north]north:Alignment Subsystem}] {};
+        \node (decode_group) [subsystem, fit=(extract) (bch) (rs), label={[font=\tiny\sffamily, fill=gray!2, inner sep=2pt, anchor=north]north:ECC Decoding Subsystem}] {};
+        \node (verify_group) [subsystem, fit=(verify) (key_pub) (telemetry), label={[font=\tiny\sffamily, fill=gray!2, inner sep=2pt, anchor=north]north:Verification \& Metrics}] {};
+    \end{scope}
+
+    % Connections
     \draw [arrow] (input) -- (history);
+    \draw [arrow] (input) -- (lcs);
     \draw [arrow] (history) -- (lcs);
     \draw [arrow] (lcs) -- (extract);
-    \draw [arrow] (extract) -- (bch);
-    \draw [arrow] (bch) -- (rs);
-    \draw [arrow] (rs) -- (verify);
+    \draw [arrow] (extract.south) -- ++(0,-0.3) -| (bch.east);
+    \draw [arrow] (bch.south) -- ++(0,-0.3) -| (rs.west);
+    \draw [arrow] (rs.south) -- ++(0,-0.3) -| (verify.east);
+    \draw [arrow] (key_pub) -- (verify);
     \draw [arrow] (verify) -- (telemetry);
+    
+    % Telemetry feedback links
+    \draw [arrow, dashed, draw=gray] (bch.south east) -- (telemetry.north west);
+    \draw [arrow, dashed, draw=gray] (rs) -- (telemetry);
 \end{tikzpicture}
-\caption{ZeroTrace Watermark Extraction and Verification Pipeline.}
+\caption{ZeroTrace Watermark Extraction and Verification Pipeline Architecture.}
 \label{fig:extract_pipeline}
 \end{figure}
 
